@@ -1,22 +1,31 @@
-# OPÇÃO 1: Dockerfile (Recomendado)
-# Crie este arquivo na raiz do projeto: Dockerfile
-
 FROM n8nio/n8n:latest
 
-# Configurações de ambiente
-ENV N8N_HOST=0.0.0.0
-ENV N8N_PORT=5678
-ENV N8N_PROTOCOL=https
-ENV GENERIC_TIMEZONE=America/Sao_Paulo
-ENV TZ=America/Sao_Paulo
+# Configurar usuário
+USER root
 
-# Configurações de produção
-ENV NODE_ENV=production
-ENV N8N_METRICS=true
-ENV N8N_LOG_LEVEL=info
+# Instalar wget para healthcheck
+RUN apk add --no-cache wget
+
+# Voltar para o usuário node
+USER node
 
 # Expor a porta
 EXPOSE 5678
 
-# Comando de inicialização
+# Variáveis de ambiente
+ENV N8N_HOST=0.0.0.0
+ENV N8N_PORT=5678
+ENV N8N_PROTOCOL=http
+ENV GENERIC_TIMEZONE=America/Sao_Paulo
+ENV TZ=America/Sao_Paulo
+ENV N8N_METRICS=true
+ENV N8N_LOG_LEVEL=info
+ENV NODE_ENV=production
+ENV N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5678/ || exit 1
+
+# Comando padrão
 CMD ["n8n", "start"]
